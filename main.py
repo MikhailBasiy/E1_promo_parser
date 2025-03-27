@@ -1,7 +1,8 @@
 import pandas as pd
 
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
@@ -11,8 +12,6 @@ from icecream import ic
 
 
 scraping_settings = {
-    # "max_attempts": 4,
-    # "load_time": 7,
     "XPATH": '//div[@class="prices-wrapper"]/div/span/span[@class="price_value"]', 
     "unavailable_txts": ["Страница не найдена"],
     # "cookies": [
@@ -21,30 +20,21 @@ scraping_settings = {
 }
 
 
-def write_to_excel(data: list[list[str | int]]) -> None:
-    df = pd.DataFrame(data, columns=["url", "price"])
-    df.to_excel("prices.xlsx", engine="xlsxwriter", index=False)
-    return
-
-
-def normalize_price(price: str) -> float:
+def normalize_price(price: str) -> int:
     price = price \
-        .replace("\u2009", "") \
         .replace("₽", "") \
         .replace(" ", "") \
-        .replace("руб.", "") \
-        .replace("р", "")
-    return float(price)
+        .replace("руб.", "")
+    return int(price)
 
 
-def parse_price(drv: webdriver, url: str, num_try=3):
+def parse_price(drv: webdriver, url: str, num_try=3, wait=4):
     if num_try:
         try:
-            price = drv.find_element(By.XPATH, scraping_settings["XPATH"]).text
+            price = WebDriverWait(drv, 8).until(EC.visibility_of_element_located((By.XPATH, scraping_settings["XPATH"]))).text
         except (NoSuchElementException, StaleElementReferenceException) as e:
             ic(url, e)
-            sleep(5)
-            parse_price(drv, url, num_try-1)
+            parse_price(drv, url, num_try-1, wait+2)
         else:
             return price
     else:
@@ -53,7 +43,7 @@ def parse_price(drv: webdriver, url: str, num_try=3):
 
 def check_page(drv: webdriver) -> bool:
     unavailable_txts = scraping_settings["unavailable_txts"]
-    page = drv.find_element(By.XPATH, "/html/body").text
+    page = WebDriverWait(drv, 8).until(EC.visibility_of_element_located((By.XPATH, "/html/body"))).text
     if any(txt in page for txt in unavailable_txts):
         return False
     return True
@@ -61,27 +51,31 @@ def check_page(drv: webdriver) -> bool:
 
 def init_webdriver() -> webdriver:
     options = webdriver.ChromeOptions()
+    options.page_load_strategy = 'none'
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--ignore-ssl-errors')
     options.add_argument('--blink-settings=imagesEnabled=false')
-    return webdriver.Chrome(options=options)
+    drv = webdriver.Chrome(options=options)
+    return drv
 
 
 def main():
-    result: list[list[str | int]] = []
-    urls = pd.read_excel("urls.xlsx", sheet_name="urls_list")["urls"]
+    wardrobes = pd.read_excel("urls.xlsx", sheet_name="urls_list")
     drv = init_webdriver()
-    for url in urls:
+    for idx, wardrobe in wardrobes.iterrows():
+        url = wardrobe.URL
         ic(url)
         drv.get(url)
         if check_page(drv) is False:
-            result.append([url, "Страница не найдена"])
+            wardrobes.loc[idx, "Цена"] = "Страница не найдена"
+            ic(price)
             continue
-        price = parse_price(drv, url)
-        result.append([url, price])
-    write_to_excel(result)
-
-            
+        price = normalize_price(parse_price(drv, url))
+        ic(price)
+        wardrobes.loc[idx, "Цена"] = price
+    ic(wardrobes)
+    wardrobes.to_excel("output.xlsx", engine="xlsxwriter", index=False)
+       
 
 if __name__ == "__main__":
     main()
