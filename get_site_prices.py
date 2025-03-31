@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 
 from selenium import webdriver
 from selenium.webdriver.support.wait import WebDriverWait
@@ -22,10 +23,7 @@ scraping_settings = {
 
 
 def normalize_price(price: str) -> int:
-    price = price \
-        .replace("₽", "") \
-        .replace(" ", "") \
-        .replace("руб.", "")
+    price = re.sub(r"[\D]", "", price)
     return int(price)
 
 
@@ -69,14 +67,14 @@ def get_site_prices():
     drv = init_webdriver()
     for idx, wardrobe in wardrobes.iterrows():
         url = wardrobe.URL
-        # ic(url)
+        ic(url)
         drv.get(url)
         if check_page(drv) is False:
             wardrobes.loc[idx, "Цена"] = "Страница не найдена"
             ic(price)
             continue
         price = normalize_price(parse_price(drv, url))
-        # ic(price)
+        ic(price)
         wardrobes.loc[idx, "Цена"] = price
     drv.quit()
     return wardrobes
