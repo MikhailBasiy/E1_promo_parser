@@ -37,12 +37,12 @@ def join_tables(site_prices:pd.DataFrame, db_prices: pd.DataFrame) -> pd.DataFra
 
 
 def main():
-    site_prices: pd.DataFrame = prepare_site_data(get_site_prices())
-    # site_prices = prepare_site_data(pd.read_excel("output.xlsx"))       #TODO: on prod replace with the row above
-    # db_prices: pd.DataFrame = get_db_prices()
-    # joined_prices = join_tables(site_prices, db_prices)
+    # site_prices: pd.DataFrame = prepare_site_data(get_site_prices())
+    site_prices = prepare_site_data(pd.read_excel("output.xlsx"))       #TODO: on prod replace with the row above
+    db_prices: pd.DataFrame = get_db_prices()
+    joined_prices = join_tables(site_prices, db_prices)
 
-    # joined_prices.to_excel("result.xlsx", index=False, engine="xlsxwriter")
+    joined_prices.to_excel("result.xlsx", index=False, engine="xlsxwriter")
 
 
 if __name__ == "__main__":
