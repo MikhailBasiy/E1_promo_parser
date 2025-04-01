@@ -17,6 +17,7 @@ def get_engine() -> Engine:
     )
     return engine
 
+
 def get_db_prices() -> pd.DataFrame:
     query = "SELECT * FROM [Результат_Стоимость_шкафов_CSKU_С промо] " \
         "WHERE [Серия]=N'Экспресс' " \

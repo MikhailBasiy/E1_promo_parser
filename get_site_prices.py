@@ -1,5 +1,6 @@
 import pandas as pd
 import re
+from time import sleep
 
 from selenium import webdriver
 from selenium.webdriver.support.wait import WebDriverWait
@@ -22,28 +23,43 @@ scraping_settings = {
 }
 
 
-def normalize_price(price: str) -> int:
-    price = re.sub(r"[\D]", "", price)
-    return int(price)
+def normalize_price(price: str) -> int | str:
+    if price:
+        price = re.sub(r"[\D]", "", price)
+        return int(price)
+    return "Ошибка парсинга цены"
 
 
-def parse_price(drv: webdriver, url: str, num_try=3, wait=8):
+def parse_price(drv: webdriver, url: str, num_try=3, wait=8) -> str:
     if num_try:
         try:
-            price = WebDriverWait(drv, wait).until(EC.visibility_of_element_located((By.XPATH, scraping_settings["XPATH"]))).text
-        except (NoSuchElementException, StaleElementReferenceException, WebDriverException, TimeoutException) as e:
+            price = WebDriverWait(drv, wait).until(
+                EC.visibility_of_element_located(
+                    (By.XPATH, scraping_settings["XPATH"])
+                )
+            ).text
+        except (
+            NoSuchElementException, 
+            StaleElementReferenceException, 
+            WebDriverException, 
+            TimeoutException
+        ) as e:
             ic(url, e)
-            parse_price(drv, url, num_try-1, wait+2)
+            parse_price(drv, url, num_try=num_try-1, wait=wait+4)
         else:
             return price
     else:
-        return "Цена не обнаружена"
+        return ""
 
 
 def check_page(drv: webdriver) -> bool:
     unavailable_txts = scraping_settings["unavailable_txts"]
     try:
-        page = WebDriverWait(drv, 12).until(EC.visibility_of_element_located((By.XPATH, "/html/body"))).text
+        page = WebDriverWait(drv, 1).until(
+            EC.visibility_of_element_located(
+                (By.XPATH, "/html/body")
+            )
+        ).text
     except (TimeoutError, WebDriverException): 
         return True   
     if any(txt in page for txt in unavailable_txts):
@@ -58,6 +74,7 @@ def init_webdriver() -> webdriver:
     options.add_argument('--ignore-ssl-errors')
     options.add_argument('--blink-settings=imagesEnabled=false')
     options.add_argument('--headless=new')
+    # options.add_argument('--disable-gpu')     ### for docker container
     drv = webdriver.Chrome(options=options)
     return drv
 
