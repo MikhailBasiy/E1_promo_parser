@@ -74,6 +74,7 @@ def init_webdriver() -> webdriver:
     options.add_argument('--ignore-ssl-errors')
     options.add_argument('--blink-settings=imagesEnabled=false')
     options.add_argument('--headless=new')
+    options.add_argument('log-level=3')
     # options.add_argument('--disable-gpu')     ### for docker container
     drv = webdriver.Chrome(options=options)
     return drv
