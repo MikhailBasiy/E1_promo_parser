@@ -59,6 +59,7 @@ def main():
     joined_prices_compared = compare_prices(joined_prices)
 
     joined_prices.to_excel("result.xlsx", index=False, engine="xlsxwriter")
+    joined_prices_compared.to_excel("joined_prices_compared.xlsx", index=False, engine="xlsxwriter")
 
 
 if __name__ == "__main__":

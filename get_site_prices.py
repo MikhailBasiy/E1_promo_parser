@@ -45,6 +45,7 @@ def parse_price(drv: webdriver, url: str, num_try=3, wait=8) -> str:
             TimeoutException
         ) as e:
             ic(url, e)
+            sleep(4)
             parse_price(drv, url, num_try=num_try-1, wait=wait+4)
         else:
             return price
