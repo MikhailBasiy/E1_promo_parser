@@ -14,6 +14,10 @@ from sqlalchemy import NVARCHAR, Integer
 
 from db_engine import get_engine
 
+from config.logging_settings import get_logger
+
+logger = get_logger(__name__)
+
 scraping_settings = {
     "XPATH": '//div[@class="prices-wrapper"]/div/span/span[@class="price_value"]',
     "unavailable_txts": ["Страница не найдена"],
@@ -44,13 +48,15 @@ def write_to_db(data: pd.DataFrame) -> None:
             index=False,
             if_exists="replace",
         )
+    logger.info(f"Writing to db finished. Successfully loaded {len(data)} rows.")
 
 
 def normalize_price(price: str) -> int | str:
     if price:
         price = re.sub(r"[\D]", "", price)
         return int(price)
-    return "Ошибка парсинга цены"
+    else:
+        return "Ошибка парсинга цены"
 
 
 def parse_price(drv: webdriver, url: str, num_try=3, wait=8) -> str:
@@ -71,9 +77,9 @@ def parse_price(drv: webdriver, url: str, num_try=3, wait=8) -> str:
             WebDriverException,
             TimeoutException,
         ) as e:
-            ic(url, e)
+            logger.info(f"При парсинге цены на странице {url} возникла ошибка: {e}")
             sleep(4)
-            parse_price(drv, url, num_try=num_try - 1, wait=wait + 4)
+            parse_price(drv, url, num_try=num_try-1, wait=wait+4)
         else:
             return price
     else:
@@ -105,6 +111,7 @@ def init_webdriver() -> webdriver:
     options.add_argument("log-level=3")
     # options.add_argument('--disable-gpu')     ### for docker container
     drv = webdriver.Chrome(options=options)
+    logger.info("Webdriver initiated successfully")
     return drv
 
 
@@ -112,6 +119,7 @@ def get_db_wardrobes() -> pd.DataFrame:
     engine = get_engine("E-COM")
     with engine.connect() as con:
         wardrobes = pd.read_sql("Список_шкафов_для_сверки_цен_с_промо", con=con)
+    logger.info(f"Wardrobes loaded successfully. Rows count: {len(wardrobes)}")
     return wardrobes
 
 
