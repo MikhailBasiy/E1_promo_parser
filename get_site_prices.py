@@ -11,6 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from db_engine import get_engine
+from sqlalchemy import NVARCHAR, Integer
 
 scraping_settings = {
     "XPATH": '//div[@class="prices-wrapper"]/div/span/span[@class="price_value"]',
@@ -19,6 +20,23 @@ scraping_settings = {
     #     {"name": "current_region", "value": "3513", 'domain': '.e-1.ru', 'secure': False, 'httpOnly': False}
     # ]
 }
+
+
+def write_to_db(data: pd.DataFrame) -> None:
+    column_types = {
+        "Название_карточки": NVARCHAR(255),
+        "Ширина": Integer(),
+        "Высота": Integer(),
+        "Глубина": Integer(),
+        "Цвет_корпуса": NVARCHAR(255),
+        "Цвет_профиля": NVARCHAR(255),
+        "Компоновка": NVARCHAR(255),
+        "URL": NVARCHAR(500),
+        "Цена": Integer()
+    }
+    engine = get_engine("E-COM")
+    with engine.connect() as con:
+        data.to_sql("Результат_Стоимость_шкафов_с_промо_Сайт", con=con, dtype=column_types, index=False, if_exists="replace")
 
 
 def normalize_price(price: str) -> int | str:
@@ -106,4 +124,5 @@ def get_site_prices():
         ic(price)
         wardrobes.loc[idx, "Цена"] = price
     drv.quit()
-    return wardrobes
+    write_to_db(wardrobes)
+    return
