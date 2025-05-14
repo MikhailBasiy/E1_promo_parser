@@ -4,53 +4,22 @@ import pandas as pd
 
 from get_db_prices import get_db_prices
 from get_site_prices import update_promo_prices_in_db
-
-
-def compare_prices(data: pd.DataFrame) -> pd.DataFrame:
-    data["Цена БД со скидкой"] = data["Sum-База_РРЦ"] * (1 - data["Скидка"] / 100)
-    data["Цены_равны"] = data["Цена"] == data["Цена БД со скидкой"]
-    return data
-
-
-def join_tables(site_prices: pd.DataFrame, db_prices: pd.DataFrame) -> pd.DataFrame:
-    joined_tables = site_prices.merge(
-        db_prices,
-        how="left",
-        left_on=[
-            "Название_карточки",
-            "Ширина",
-            "Высота",
-            "Глубина",
-            "Цвет_корпуса",
-            "Цвет_профиля",
-            "Компоновка",
-        ],
-        right_on=[
-            "Наименование шкафа на сайте",
-            "Ширина",
-            "Высота",
-            "Глубина",
-            "Вариант исполнения шкафа",
-            "Цвет профиля",
-            "Компановка корпуса",
-        ],
-        suffixes=("_сайт", "_БД"),
-    )
-    return joined_tables
+from compare_prices import compare_prices
+from get_site_promo_prices import get_site_promo_prices
 
 
 def main():
     update_promo_prices_in_db()
-    # db_prices: pd.DataFrame = get_db_prices()
+    site_prices = get_site_promo_prices()
+    db_prices: pd.DataFrame = get_db_prices()
     # db_prices.to_excel("db_prices.xlsx", engine="xlsxwriter", index=False)
 
     # joined_prices = join_tables(site_prices, db_prices)
-    # joined_prices_compared = compare_prices(joined_prices)
-
-    # joined_prices.to_excel("result.xlsx", index=False, engine="xlsxwriter")
-    # joined_prices_compared.to_excel(
-    #     "joined_prices_compared.xlsx", index=False, engine="xlsxwriter"
-    # )
+    compared_prices = compare_prices(site_prices, db_prices)
+    
+    compared_prices.to_excel(
+        "compared_prices.xlsx", index=False, engine="xlsxwriter"
+    )
 
 
 if __name__ == "__main__":
