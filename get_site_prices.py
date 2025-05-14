@@ -115,7 +115,7 @@ def init_webdriver() -> webdriver:
     return drv
 
 
-def get_db_wardrobes() -> pd.DataFrame:
+def get_wardrobes_catalog() -> pd.DataFrame:
     engine = get_engine("E-COM")
     with engine.connect() as con:
         wardrobes = pd.read_sql("Список_шкафов_для_сверки_цен_с_промо", con=con)
@@ -124,7 +124,7 @@ def get_db_wardrobes() -> pd.DataFrame:
 
 
 def update_promo_prices_in_db():
-    wardrobes = get_db_wardrobes()
+    wardrobes = get_wardrobes_catalog()
     # wardrobes = pd.read_excel("urls.xlsx", sheet_name="urls_list")
     drv = init_webdriver()
     for idx, wardrobe in wardrobes.iterrows():
