@@ -123,7 +123,7 @@ def get_db_wardrobes() -> pd.DataFrame:
     return wardrobes
 
 
-def get_site_prices():
+def update_promo_prices_in_db():
     wardrobes = get_db_wardrobes()
     # wardrobes = pd.read_excel("urls.xlsx", sheet_name="urls_list")
     drv = init_webdriver()

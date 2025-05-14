@@ -3,7 +3,7 @@ from datetime import date
 import pandas as pd
 
 from get_db_prices import get_db_prices
-from get_site_prices import get_site_prices
+from get_site_prices import update_promo_prices_in_db
 
 
 def compare_prices(data: pd.DataFrame) -> pd.DataFrame:
@@ -40,7 +40,7 @@ def join_tables(site_prices: pd.DataFrame, db_prices: pd.DataFrame) -> pd.DataFr
 
 
 def main():
-    get_site_prices()
+    update_promo_prices_in_db()
     # db_prices: pd.DataFrame = get_db_prices()
     # db_prices.to_excel("db_prices.xlsx", engine="xlsxwriter", index=False)
 
