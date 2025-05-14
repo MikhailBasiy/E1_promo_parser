@@ -1,9 +1,6 @@
-from os import getenv
-
 import pandas as pd
-from dotenv import load_dotenv
-from sqlalchemy import create_engine
-from sqlalchemy.engine.base import Engine
+
+from db_engine import get_engine
 
 
 def clean_data(data: pd.DataFrame) -> pd.DataFrame:
@@ -65,21 +62,7 @@ def clean_data(data: pd.DataFrame) -> pd.DataFrame:
         .str.replace("Локер (С доп. полками, 2 выдвижных модуля)", "")
         .str.replace("Локер полки и штанга", "Локер 120 (базовая компоновка)")
     )
-
     return data
-
-
-def get_engine() -> Engine:
-    load_dotenv()
-    DB_HOST = getenv("DB_HOST")
-    DB_NAME = getenv("DB_NAME")
-    DB_USERNAME = getenv("DB_USERNAME")
-    DB_PASSWORD = getenv("DB_PASSWORD")
-    engine = create_engine(
-        f"mssql+pyodbc://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}/"
-        f"{DB_NAME}?driver=ODBC+Driver+17+for+SQL+Server"
-    )
-    return engine
 
 
 def get_db_prices() -> pd.DataFrame:
@@ -88,8 +71,6 @@ def get_db_prices() -> pd.DataFrame:
         "WHERE [Цвет профиля] IN (N'Серебро', N'Черный') "
         "AND [Вариант исполнения шкафа] IN (N'Белый снег', N'Бетон');"
     )
-
-    engine = get_engine()
-
+    engine = get_engine("Access")
     with engine.connect() as con:
         return clean_data(pd.read_sql(query, con))

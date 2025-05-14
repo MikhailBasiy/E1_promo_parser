@@ -10,6 +10,7 @@ from selenium.common.exceptions import (NoSuchElementException,
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
+from db_engine import get_engine
 
 scraping_settings = {
     "XPATH": '//div[@class="prices-wrapper"]/div/span/span[@class="price_value"]',
@@ -82,8 +83,16 @@ def init_webdriver() -> webdriver:
     return drv
 
 
+def get_db_wardrobes() -> pd.DataFrame:
+    engine = get_engine("E-COM")
+    with engine.connect() as con:
+        wardrobes = pd.read_sql("Список_шкафов_для_сверки_цен_с_промо", con=con)
+    return wardrobes
+
+
 def get_site_prices():
-    wardrobes = pd.read_excel("urls.xlsx", sheet_name="urls_list")
+    wardrobes = get_db_wardrobes()
+    # wardrobes = pd.read_excel("urls.xlsx", sheet_name="urls_list")
     drv = init_webdriver()
     for idx, wardrobe in wardrobes.iterrows():
         url = wardrobe.URL
