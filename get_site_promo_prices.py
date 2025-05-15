@@ -1,5 +1,6 @@
-from db_engine import get_engine
 import pandas as pd
+
+from db_engine import get_engine
 
 
 def get_site_promo_prices() -> None:

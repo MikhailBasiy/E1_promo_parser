@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from time import sleep
 
 import pandas as pd
@@ -11,10 +12,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from sqlalchemy import NVARCHAR, Integer
-
-from db_engine import get_engine
+from sqlalchemy.dialects.mssql import DATETIME2
 
 from config.logging_settings import get_logger
+from db_engine import get_engine
 
 logger = get_logger(__name__)
 
@@ -29,6 +30,7 @@ scraping_settings = {
 
 def write_to_db(data: pd.DataFrame) -> None:
     column_types = {
+        "Дата": DATETIME2(precision=0),
         "Название_карточки": NVARCHAR(255),
         "Ширина": Integer(),
         "Высота": Integer(),
@@ -49,6 +51,11 @@ def write_to_db(data: pd.DataFrame) -> None:
             if_exists="replace",
         )
     logger.info(f"Writing to db finished. Successfully loaded {len(data)} rows.")
+
+
+def add_time_column(data: pd.DataFrame) -> pd.DataFrame:
+    data["Дата"] = datetime.now()
+    return data
 
 
 def normalize_price(price: str) -> int | str:
@@ -79,7 +86,7 @@ def parse_price(drv: webdriver, url: str, num_try=3, wait=8) -> str:
         ) as e:
             logger.info(f"При парсинге цены на странице {url} возникла ошибка: {e}")
             sleep(4)
-            parse_price(drv, url, num_try=num_try-1, wait=wait+4)
+            parse_price(drv, url, num_try=num_try - 1, wait=wait + 4)
         else:
             return price
     else:
@@ -118,7 +125,7 @@ def init_webdriver() -> webdriver:
 def get_wardrobes_catalog() -> pd.DataFrame:
     engine = get_engine("E-COM")
     with engine.connect() as con:
-        wardrobes = pd.read_sql("Список_шкафов_для_сверки_цен_с_промо", con=con)
+        wardrobes = pd.read_sql("select top(5) * from Список_шкафов_для_сверки_цен_с_промо", con=con)
     logger.info(f"Wardrobes loaded successfully. Rows count: {len(wardrobes)}")
     return wardrobes
 
@@ -139,5 +146,6 @@ def update_promo_prices_in_db():
         ic(price)
         wardrobes.loc[idx, "Цена"] = price
     drv.quit()
+    wardrobes = add_time_column(wardrobes)
     write_to_db(wardrobes)
     return

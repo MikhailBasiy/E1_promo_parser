@@ -2,9 +2,9 @@ from datetime import date
 
 import pandas as pd
 
+from compare_prices import compare_prices
 from get_db_prices import get_db_prices
 from get_site_prices import update_promo_prices_in_db
-from compare_prices import compare_prices
 from get_site_promo_prices import get_site_promo_prices
 
 
@@ -16,10 +16,8 @@ def main():
 
     # joined_prices = join_tables(site_prices, db_prices)
     compared_prices = compare_prices(site_prices, db_prices)
-    
-    compared_prices.to_excel(
-        "compared_prices.xlsx", index=False, engine="xlsxwriter"
-    )
+
+    compared_prices.to_excel("compared_prices.xlsx", index=False, engine="xlsxwriter")
 
 
 if __name__ == "__main__":
